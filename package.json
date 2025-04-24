@@ -1,0 +1,27 @@
+{
+  "name": "flint-serve",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index --env-file=.env",
+    "dev": "nodemon index --env-file=.env"
+  },
+  "keywords": [],
+  "author": "James Tanna",
+  "license": "ISC",
+  "description": "Server for flint project",
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "prisma": "^6.6.0"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.6.0",
+    "bcrypt": "^5.1.1",
+    "express": "^5.1.0",
+    "image-size": "^2.0.2",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.2",
+    "nodemailer": "^6.10.1"
+  }
+}
