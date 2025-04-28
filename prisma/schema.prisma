@@ -14,11 +14,11 @@ model User{
   email String @unique
   dob DateTime
   gender Gender
-  Role Role @default(USER)
   address String
   mobile String @unique
   password String
   stores Store[]
+  orders Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -28,11 +28,13 @@ model Store{
   name String @unique
   products Product[]
   address String
-  owner User @relation(fields: [ownerId], references: [id])
+  owner User @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
   createdAt DateTime @default(now())
   pictures Photo[]
   description String
+  orders Order[]
+  updatedAt DateTime @updatedAt
 }
 
 model Product{
@@ -40,10 +42,13 @@ model Product{
   name String @unique
   price Float
   stock Int
-  store Store? @relation(fields: [storeId], references: [id])
-  storeId String?
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId String
   pictures Photo[]
   description String
+  orders Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Photo{
@@ -52,15 +57,25 @@ model Photo{
   height Int
   width Int
   filename String
-  store Store? @relation(fields: [storeId], references: [id])
+  store Store? @relation(fields: [storeId], references: [id], onDelete: Cascade)
   storeId String?
-  product Product? @relation(fields: [productId], references: [id])
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String?
 }
 
-enum Role{
-  ADMIN
-  USER
+model Order{
+  id String @id @default(uuid())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  store Store @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  storeId String
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId String
+  quantity Int
+  delivered Boolean @default(false)
+  deliveredAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum Gender{

@@ -1,8 +1,9 @@
 import prisma from "../exportPrisma.js";
 import fs from "fs";
 import path from "path";
-import jwt, { verify } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import sizeOf from "image-size";
+import { get } from "http";
 
 const serverError = (res, err) => {
   res.status(500).end("Server error");
@@ -25,6 +26,14 @@ const processImage = (req, photo) => {
   };
 };
 
+const getPageOffset = (query) => {
+  if (!query) return 0;
+  if (isNaN(parseInt(query))) return 0;
+  const page = parseInt(query);
+  if (page < 0) return 0;
+  return page * 20;
+};
+
 export const searchStores = async (req, res) => {
   try {
     const stores = await prisma.store.findMany({
@@ -37,7 +46,7 @@ export const searchStores = async (req, res) => {
         owner: true,
         pictures: true,
       },
-      skip: +req.query.page * 20,
+      skip: getPageOffset(req.query.page),
       take: 20,
     });
 
@@ -55,7 +64,7 @@ export const searchProducts = async (req, res) => {
           contains: req.body.name,
         },
       },
-      skip: +req.query.page * 20,
+      skip: getPageOffset(req.query.page),
       take: 20,
       include: {
         pictures: true,
@@ -92,7 +101,7 @@ export const getAllStoresForUser = async (req, res) => {
       orderBy: {
         name: "asc",
       },
-      skip: +req.query.page * 20 || 0,
+      skip: getPageOffset(req.query.page),
       take: 20,
     });
 
@@ -497,29 +506,6 @@ export const deleteStore = async (req, res) => {
 
     if (store.ownerId !== user.id) return res.status(403).end("ACcess denied");
 
-    if (store.pictures.length !== 0) {
-      const pics = await prisma.photo.findMany({
-        where: {
-          storeId: store.id,
-        },
-        select: {
-          filename: true,
-        },
-      });
-
-      for (const photo of pics) {
-        await fs.promises.unlink(
-          path.join(__dirname, "..", "images", photo.filename)
-        );
-      }
-
-      await prisma.photo.deleteMany({
-        where: {
-          storeId: store.id,
-        },
-      });
-    }
-
     await prisma.store.delete({
       where: {
         id,
@@ -573,29 +559,6 @@ export const deleteProduct = async (req, res) => {
     if (!store) return res.status(404).end("Store does not exist");
 
     if (store.ownerId !== user.id) return res.status(403).end("ACcess denied");
-
-    if (product.pictures.length !== 0) {
-      const pics = await prisma.photo.findMany({
-        where: {
-          productId: product.id,
-        },
-        select: {
-          filename: true,
-        },
-      });
-
-      for (const photo of pics) {
-        await fs.promises.unlink(
-          path.join(__dirname, "..", "images", photo.filename)
-        );
-      }
-
-      await prisma.photo.deleteMany({
-        where: {
-          productId: product.id,
-        },
-      });
-    }
 
     await prisma.product.delete({
       where: {

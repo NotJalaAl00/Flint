@@ -224,7 +224,7 @@ export const updatePasswordVerify = async (req, res) => {
 
     res.status(200).json({ token, user });
   } catch (err) {
-    return serverError(err);
+    return serverError(res, err);
   }
 };
 
@@ -246,6 +246,6 @@ export const upDatePassword = async (req, res) => {
     });
     res.status(200).json({ user, token });
   } catch (err) {
-    return serverError(err);
+    return serverError(res, err);
   }
 };
