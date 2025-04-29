@@ -72,14 +72,40 @@ model Order{
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId String
   quantity Int
+  paid Boolean @default(false)
+  paymentMethod PaymentMethod
   delivered Boolean @default(false)
   deliveredAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  succesfulPayment Payment? @relation(name: "SuccessfulPayment")
+  successfulPaymentId String? @unique
+  failedPayments Payment[] @relation("FailedPayments")
+}
+
+model Payment{
+  id String @id @default(uuid())
+  order Order? @relation(fields: [orderId], references: [id], name: "SuccessfulPayment")
+  orderId String? @unique
+  razorpayOrderId String @unique
+  razorpayPaymentId String @unique
+  status String
+  amount Float
+  currency String
+  method String
+  failedForOrder Order? @relation(fields: [failedForOrderId], references: [id], name: "FailedPayments")
+  failedForOrderId String?
 }
 
 enum Gender{
   male
   female
   other
+}
+
+enum PaymentMethod{
+  cash
+  card
+  upi
+  netbanking
 }

@@ -3,7 +3,6 @@ import fs from "fs";
 import path from "path";
 import jwt from "jsonwebtoken";
 import sizeOf from "image-size";
-import { get } from "http";
 
 const serverError = (res, err) => {
   res.status(500).end("Server error");

@@ -2,6 +2,7 @@ import prisma from "../exportPrisma.js";
 import jwt from "jsonwebtoken";
 import nodeMailer from "nodemailer";
 import bcrypt from "bcrypt";
+import redis from "../redis.js";
 
 const serverError = (res, err) => {
   res.status(500).end("Server error");
@@ -24,16 +25,17 @@ const verifyPass = async (pass, hashedPass) => {
   return match;
 };
 
-const verifyOtp = (email, otp) => {
-  let passed = false;
-  activeOtps.forEach((savedOtp) => {
-    const [savedEmail, savedOtpNo] = Object.values(savedOtp);
-    if (savedEmail === email && savedOtpNo === otp) {
-      passed = true;
+const verifyOtp = async (email, otp) => {
+  try {
+    const redisOtp = await redis.get(email);
+    if (!redisOtp) return false;
+    const passed = redisOtp === otp;
+    if (passed) {
+      await removeOtp(email);
     }
-  });
-
-  return passed;
+  } catch (err) {
+    return null;
+  }
 };
 
 const transporter = nodeMailer.createTransport({
@@ -46,26 +48,33 @@ const transporter = nodeMailer.createTransport({
   secure: true,
 });
 
-let activeOtps = [];
-
-const generateOtp = (email) => {
-  const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
-  let otp = "";
-
-  for (let c = 1; c <= 6; c++) {
-    otp += nums[Math.floor(Math.random() * nums.length)];
-  }
-
-  activeOtps.push({
-    email,
-    otp,
-  });
-
-  return otp;
+const saveOtps = async (email, time, otp) => {
+  await redis.set(email, otp, "EX", 180);
 };
 
-const removeOtp = (email) => {
-  activeOtps = activeOtps.filter((otp) => otp.email != email);
+const generateOtp = async (email) => {
+  try {
+    const nums = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+    let otp = "";
+
+    for (let c = 1; c <= 6; c++) {
+      otp += nums[Math.floor(Math.random() * nums.length)];
+    }
+
+    await saveOtps(email, 180, otp);
+    if (!otp) return null;
+    return otp;
+  } catch (err) {
+    return null;
+  }
+};
+
+const removeOtp = async (email) => {
+  try {
+    await redis.del(email);
+  } catch (err) {
+    return null;
+  }
 };
 
 export const getOtp = async (req, res) => {
@@ -84,7 +93,9 @@ export const getOtp = async (req, res) => {
     )
       return res.status(400).end("Bad Request");
 
-    const otp = generateOtp(userData.email);
+    const otp = await generateOtp(userData.email);
+
+    if (!otp) return serverError(res, "Otp generation failed.");
 
     const mailData = {
       from: process.env.USER,
@@ -105,8 +116,6 @@ export const getOtp = async (req, res) => {
         success: true,
       });
     });
-
-    setTimeout(() => removeOtp(userData.email), 180000);
   } catch (err) {
     serverError(res, err);
   }
@@ -146,7 +155,7 @@ export const validate = async (req, res) => {
   const { userData, otp } = req.body;
   const { email } = userData;
 
-  const passed = verifyOtp(email, otp);
+  const passed = await verifyOtp(email, otp);
 
   if (!passed) return res.status(403).end("Otp expired or incorrect");
 
@@ -174,7 +183,9 @@ export const validate = async (req, res) => {
 export const upDatePasswordOtp = async (req, res) => {
   const { email } = req.body;
 
-  const otp = generateOtp(email);
+  const otp = await generateOtp(email);
+
+  if (!otp) return serverError(res, "Otp generation failed.");
 
   const mailData = {
     from: process.env.USER,
@@ -195,15 +206,13 @@ export const upDatePasswordOtp = async (req, res) => {
     console.log(info);
     res.status(200).json({ success: true });
   });
-
-  setTimeout(() => removeOtp(email), 180000);
 };
 
 export const updatePasswordVerify = async (req, res) => {
   try {
     const { otp, email } = req.body;
 
-    const passed = verifyOtp(email, otp);
+    const passed = await verifyOtp(email, otp);
 
     if (!passed) return res.status(403).end("Otp expired or does not exist.");
 

@@ -123,7 +123,6 @@ exports.Prisma.UserScalarFieldEnum = {
   email: 'email',
   dob: 'dob',
   gender: 'gender',
-  Role: 'Role',
   address: 'address',
   mobile: 'mobile',
   password: 'password',
@@ -137,7 +136,8 @@ exports.Prisma.StoreScalarFieldEnum = {
   address: 'address',
   ownerId: 'ownerId',
   createdAt: 'createdAt',
-  description: 'description'
+  description: 'description',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.ProductScalarFieldEnum = {
@@ -146,7 +146,9 @@ exports.Prisma.ProductScalarFieldEnum = {
   price: 'price',
   stock: 'stock',
   storeId: 'storeId',
-  description: 'description'
+  description: 'description',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.PhotoScalarFieldEnum = {
@@ -157,6 +159,33 @@ exports.Prisma.PhotoScalarFieldEnum = {
   filename: 'filename',
   storeId: 'storeId',
   productId: 'productId'
+};
+
+exports.Prisma.OrderScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  storeId: 'storeId',
+  productId: 'productId',
+  quantity: 'quantity',
+  paid: 'paid',
+  paymentMethod: 'paymentMethod',
+  delivered: 'delivered',
+  deliveredAt: 'deliveredAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  successfulPaymentId: 'successfulPaymentId'
+};
+
+exports.Prisma.PaymentScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  razorpayOrderId: 'razorpayOrderId',
+  razorpayPaymentId: 'razorpayPaymentId',
+  status: 'status',
+  amount: 'amount',
+  currency: 'currency',
+  method: 'method',
+  failedForOrderId: 'failedForOrderId'
 };
 
 exports.Prisma.SortOrder = {
@@ -181,16 +210,16 @@ exports.Prisma.StoreOrderByRelevanceFieldEnum = {
   description: 'description'
 };
 
-exports.Prisma.NullsOrder = {
-  first: 'first',
-  last: 'last'
-};
-
 exports.Prisma.ProductOrderByRelevanceFieldEnum = {
   id: 'id',
   name: 'name',
   storeId: 'storeId',
   description: 'description'
+};
+
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
 };
 
 exports.Prisma.PhotoOrderByRelevanceFieldEnum = {
@@ -200,22 +229,45 @@ exports.Prisma.PhotoOrderByRelevanceFieldEnum = {
   storeId: 'storeId',
   productId: 'productId'
 };
+
+exports.Prisma.OrderOrderByRelevanceFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  storeId: 'storeId',
+  productId: 'productId',
+  successfulPaymentId: 'successfulPaymentId'
+};
+
+exports.Prisma.PaymentOrderByRelevanceFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  razorpayOrderId: 'razorpayOrderId',
+  razorpayPaymentId: 'razorpayPaymentId',
+  status: 'status',
+  currency: 'currency',
+  method: 'method',
+  failedForOrderId: 'failedForOrderId'
+};
 exports.Gender = exports.$Enums.Gender = {
   male: 'male',
   female: 'female',
   other: 'other'
 };
 
-exports.Role = exports.$Enums.Role = {
-  ADMIN: 'ADMIN',
-  USER: 'USER'
+exports.PaymentMethod = exports.$Enums.PaymentMethod = {
+  cash: 'cash',
+  card: 'card',
+  upi: 'upi',
+  netbanking: 'netbanking'
 };
 
 exports.Prisma.ModelName = {
   User: 'User',
   Store: 'Store',
   Product: 'Product',
-  Photo: 'Photo'
+  Photo: 'Photo',
+  Order: 'Order',
+  Payment: 'Payment'
 };
 
 /**
