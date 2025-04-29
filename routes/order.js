@@ -8,7 +8,7 @@ import {
   updateOrderStatus,
   deleteOrder,
   createRazorpayOrder,
-} from "../controllers/order.js";
+} from "../controller/order.js";
 const Orders = Router();
 
 Orders.get("/user", getOrdersForUser);

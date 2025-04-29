@@ -42,14 +42,14 @@ const transporter = nodeMailer.createTransport({
   port: 465,
   host: "smtp.gmail.com",
   auth: {
-    user: process.env.USER,
+    user: process.env.NAME,
     pass: process.env.PASS,
   },
   secure: true,
 });
 
 const saveOtps = async (email, time, otp) => {
-  await redis.set(email, otp, "EX", 180);
+  await redis.set(email, otp, "EX", time);
 };
 
 const generateOtp = async (email) => {
@@ -90,12 +90,13 @@ export const getOtp = async (req, res) => {
         userData.address ||
         userData.password
       )
-    )
+    ) {
       return res.status(400).end("Bad Request");
+    }
 
     const otp = await generateOtp(userData.email);
 
-    if (!otp) return serverError(res, "Otp generation failed.");
+    if (!otp) return serverError(res, "otp filed");
 
     const mailData = {
       from: process.env.USER,
@@ -110,14 +111,14 @@ export const getOtp = async (req, res) => {
     };
 
     transporter.sendMail(mailData, (err, info) => {
-      if (err) return serverError(err);
+      if (err) return serverError(res, err);
       console.log(info);
       res.status(200).json({
         success: true,
       });
     });
   } catch (err) {
-    serverError(res, err);
+    if (err) return serverError(res, err);
   }
 };
 
@@ -147,65 +148,73 @@ export const signIn = async (req, res) => {
 
     res.status(200).json({ user, token });
   } catch (err) {
-    serverError(res, err);
+    if (err) return serverError(res, err);
   }
 };
 
 export const validate = async (req, res) => {
-  const { userData, otp } = req.body;
-  const { email } = userData;
+  try {
+    const { userData, otp } = req.body;
+    const { email } = userData;
 
-  const passed = await verifyOtp(email, otp);
+    const passed = await verifyOtp(email, otp);
 
-  if (!passed) return res.status(403).end("Otp expired or incorrect");
+    if (!passed) return res.status(403).end("Otp expired or incorrect");
 
-  const hashed = await encrypt(userData.password);
+    const hashed = await encrypt(userData.password);
 
-  const user = await prisma.user.create({
-    data: {
-      ...userData,
-      password: hashed,
-    },
-  });
+    const user = await prisma.user.create({
+      data: {
+        ...userData,
+        password: hashed,
+      },
+    });
 
-  const token = jwt.sign(
-    {
-      userId: user.id,
-      email: user.email,
-      Role: user.Role,
-    },
-    process.env.key
-  );
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        Role: user.Role,
+      },
+      process.env.key
+    );
 
-  res.status(200).json({ user, token });
+    res.status(200).json({ user, token });
+  } catch (err) {
+    if (err) return serverError(res, err);
+  }
 };
 
 export const upDatePasswordOtp = async (req, res) => {
-  const { email } = req.body;
+  try {
+    const { email } = req.body;
 
-  const otp = await generateOtp(email);
+    const otp = await generateOtp(email);
 
-  if (!otp) return serverError(res, "Otp generation failed.");
+    if (!otp) return serverError(res, "Otp generation failed.");
 
-  const mailData = {
-    from: process.env.USER,
-    to: email,
-    text: `
+    const mailData = {
+      from: process.env.USER,
+      to: email,
+      text: `
     Your otp for updating your Flint account password is ${otp}.
     Please do not share it with anyone.
     `,
-    html: `
+      html: `
     Your otp for updating your Flint account password is <b> ${otp} </b>. 
     Please do not ahre it with anyone.
     `,
-    subject: "Otp for updating Flint account password",
-  };
+      subject: "Otp for updating Flint account password",
+    };
 
-  transporter.sendMail(mailData, (err, info) => {
-    if (err) return serverError(err);
-    console.log(info);
-    res.status(200).json({ success: true });
-  });
+    transporter.sendMail(mailData, (err, info) => {
+      if (err) return serverError(err);
+      console.log(info);
+      res.status(200).json({ success: true });
+    });
+  } catch (err) {
+    if (err) return serverError(res, err);
+  }
 };
 
 export const updatePasswordVerify = async (req, res) => {
@@ -233,7 +242,7 @@ export const updatePasswordVerify = async (req, res) => {
 
     res.status(200).json({ token, user });
   } catch (err) {
-    return serverError(res, err);
+    if (err) return serverError(res, err);
   }
 };
 
@@ -255,6 +264,6 @@ export const upDatePassword = async (req, res) => {
     });
     res.status(200).json({ user, token });
   } catch (err) {
-    return serverError(res, err);
+    if (err) return serverError(res, err);
   }
 };

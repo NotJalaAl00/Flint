@@ -1,13 +1,8 @@
-import prisma from "../exportPrisma";
+import prisma from "../exportPrisma.js";
 import jwt from "jsonwebtoken";
 import nodeMailer from "nodemailer";
 import Razorpay from "razorpay";
-import redis from "../redis";
-
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+import redis from "../redis.js";
 
 const transporter = nodeMailer.createTransport({
   port: 465,
@@ -364,6 +359,11 @@ export const deleteOrder = async (req, res) => {
 };
 
 export const createRazorpayOrder = async (req, res) => {
+  const razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+
   try {
     const { orderDetails } = req.body;
     const orderData = await prisma.order.findUnique({
